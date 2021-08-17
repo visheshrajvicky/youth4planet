@@ -1,0 +1,80 @@
+
+
+
+
+
+vm1 - Org1- 35.224.142.40
+
+vm2 - Org2- 34.123.1.100
+
+vm3 - Org3- 35.232.189.202
+
+vm4 - Ord-Org- 35.222.103.248
+
+docker swarm init --advertise-addr 35.224.142.40
+
+docker swarm join-tocken manager
+
+Org2- docker swarm join --token SWMTKN-1-1cp7mbqiw9lndwnbjq88mosggs07gjblg761drg77gikbzf985-af4njuqcv4k544w8rkz66o0ua 35.224.142.40:2377 --advertise-addr 34.123.1.100
+
+Org3- docker swarm join --token SWMTKN-1-1cp7mbqiw9lndwnbjq88mosggs07gjblg761drg77gikbzf985-af4njuqcv4k544w8rkz66o0ua 35.224.142.40:2377 --advertise-addr 35.232.189.202
+
+Org4- docker swarm join --token SWMTKN-1-1cp7mbqiw9lndwnbjq88mosggs07gjblg761drg77gikbzf985-af4njuqcv4k544w8rkz66o0ua 35.224.142.40:2377 --advertise-addr 35.222.103.248
+
+docker network create --attachable --driver overlay artifacts_test
+
+
+
+wget https://dl.google.com/go/go1.13.12.linux-amd64.tar.gz 
+tar -xzvf go1.13.12.linux-amd64.tar.gz
+sudo rm -rf /usr/local/go
+sudo mv go /usr/local
+export GOPATH=/usr/local/go 
+export PATH=$PATH:$GOPATH/bin
+go version
+
+
+
+export CORE_PEER_LOCALMSPID="Org1MSP"
+export CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/channel/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/channel/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+export CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+export CHANNEL_NAME="mychannel"
+export CC_NAME="fabcar"
+export ORDERER_CA=/etc/hyperledger/channel/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+export VERSION="1"
+
+
+peer lifecycle chaincode commit -o orderer.example.com:7050 --ordererTLSHostnameOverride orderer.example.com \
+    --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA \
+    --channelID $CHANNEL_NAME --name ${CC_NAME} \
+    --peerAddresses peer0.org1.example.com:7051 --tlsRootCertFiles /etc/hyperledger/channel/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt \
+    --peerAddresses peer0.org3.example.com:11051 --tlsRootCertFiles /etc/hyperledger/channel/crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls/ca.crt \
+    --peerAddresses peer0.org2.example.com:9051 --tlsRootCertFiles /etc/hyperledger/channel/crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt \
+    --version ${VERSION} --sequence ${VERSION} --init-required
+
+
+peer chaincode invoke -o orderer.example.com:7050 \
+    --ordererTLSHostnameOverride orderer.example.com \
+    --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA \
+    -C $CHANNEL_NAME -n ${CC_NAME} \
+    --peerAddresses peer0.org1.example.com:7051 --tlsRootCertFiles /etc/hyperledger/channel/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt \
+    --peerAddresses peer0.org2.example.com:9051 --tlsRootCertFiles /etc/hyperledger/channel/crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt \
+    --peerAddresses peer0.org3.example.com:11051 --tlsRootCertFiles /etc/hyperledger/channel/crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls/ca.crt \
+    --isInit -c '{"Args":[]}'
+
+
+peer chaincode invoke -o orderer.example.com:7050 \
+    --ordererTLSHostnameOverride orderer.example.com \
+    --tls \
+    --cafile /etc/hyperledger/channel/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem \
+    -C mychannel -n fabcar \--peerAddresses peer0.org1.example.com:7051 --tlsRootCertFiles /etc/hyperledger/channel/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt \
+    --peerAddresses peer0.org2.example.com:9051 --tlsRootCertFiles /etc/hyperledger/channel/crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt \
+    --peerAddresses peer0.org3.example.com:11051 --tlsRootCertFiles /etc/hyperledger/channel/crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls/ca.crt \
+    -c '{"function": "createCar","Args":["666666", "Audi", "R8", "Red", "Sandip"]}'
+
+
+
+POSTMAN
+
+{"info":{"_postman_id":"683cb58f-c2b9-458e-8f76-05bbe17a62a2","name":"Multihost Deployment","schema":"https://schema.getpostman.com/json/collection/v2.0.0/collection.json"},"item":[{"name":"Query By Car ID","_postman_id":"263a2431-3e6d-43db-82ea-779cd4631297","request":{"method":"GET","header":[],"url":{"raw":"http://35.193.123.34:4000/channels/mychannel/chaincodes/fabcar?args=[\"8888\"]&peer=peer0.org1.example.com&fcn=queryCar","protocol":"http","host":["35","193","123","34"],"port":"4000","path":["channels","mychannel","chaincodes","fabcar"],"query":[{"key":"args","value":"[\"8888\"]"},{"key":"peer","value":"peer0.org1.example.com"},{"key":"fcn","value":"queryCar"}]}},"response":[]},{"name":"Register User","_postman_id":"bbca5229-402a-457c-a8c5-eb4e41c22cbf","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n\t\"username\":\"sandip\",\n\t\"orgName\": \"Org1\"\n}\t","options":{"raw":{}}},"url":"http://35.193.123.34:4000/users"},"response":[]},{"name":"Add Car","_postman_id":"1bde4771-5e8a-43ba-ba43-eccf27099170","request":{"method":"POST","header":[{"warning":"This is a duplicate header and will be overridden by the Authorization header generated by Postman.","key":"Authorization","value":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1NzY5MDA5MTMsInVzZXJuYW1lIjoicGF2YW4iLCJvcmdOYW1lIjoiT3JnMSIsImlhdCI6MTU3Njg2NDkxM30.3T8fgkzz4rey-ioIPXu3-Ou9jZa8RLOgUN4OW1SsYP4","disabled":true},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n    \"fcn\": \"createCar\",\n    \"peers\": [\"peer0.org1.example.com\",\"peer0.org2.example.com\"],\n    \"chaincodeName\":\"fabcar\",\n    \"channelName\": \"mychannel\",\n   \"args\": [\"8888\",\"AUDI111\",\"F1-Reloaded\",\"White\",\"pavan\"]\n}","options":{"raw":{}}},"url":"http://35.193.123.34:4000/channels/mychannel/chaincodes/fabcar"},"response":[]}],"protocolProfileBehavior":{}}

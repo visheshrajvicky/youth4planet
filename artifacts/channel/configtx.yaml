@@ -1,0 +1,196 @@
+Organizations:
+
+
+    - &OrdererOrg
+        Name: OrdererOrg
+        ID: OrdererMSP
+
+        MSPDir: ../../setup1/vm1/crypto-config/ordererOrganizations/youth4planet.com/msp
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('OrdererMSP.member')"
+            Writers:
+                Type: Signature
+                Rule: "OR('OrdererMSP.member')"
+            Admins:
+                Type: Signature
+                Rule: "OR('OrdererMSP.admin')"
+
+        # OrdererEndpoints:
+        #     - orderer.youth4planet.com:7050
+
+    - &y4p1
+        Name: y4p1MSP
+        ID: y4p1MSP
+        MSPDir: ../../setup1/vm1/crypto-config/peerOrganizations/y4p1.youth4planet.com/msp
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('y4p1MSP.admin', 'y4p1MSP.peer', 'y4p1MSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('y4p1MSP.admin', 'y4p1MSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('y4p1MSP.admin')"
+            Endorsement:
+                Type: Signature
+                Rule: "OR('y4p1MSP.peer')"
+            
+        AnchorPeers:
+            - Host: peer0.y4p1.youth4planet.com
+              Port: 7051
+
+    - &y4p2 
+        Name: y4p2MSP
+        ID: y4p2MSP
+        MSPDir: ../../setup1/vm2/crypto-config/peerOrganizations/y4p2.youth4planet.com/msp
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('y4p2MSP.admin', 'y4p2MSP.peer', 'y4p2MSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('y4p2MSP.admin', 'y4p2MSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('y4p2MSP.admin')"
+            Endorsement:
+                Type: Signature
+                Rule: "OR('y4p2MSP.peer')"
+
+        AnchorPeers:
+            - Host: peer0.y4p2.youth4planet.com
+              Port: 9051
+
+
+Capabilities:
+    Channel: &ChannelCapabilities
+        V2_0: true
+    Orderer: &OrdererCapabilities
+        V2_0: true
+
+    Application: &ApplicationCapabilities
+       V2_0: true
+
+Application: &ApplicationDefaults
+
+    Organizations:
+
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+        LifecycleEndorsement:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Endorsement"
+        Endorsement:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Endorsement"
+
+    Capabilities:
+        <<: *ApplicationCapabilities
+
+Orderer: &OrdererDefaults
+
+    OrdererType: etcdraft
+    
+    Addresses:
+        - orderer.youth4planet.com:7050
+
+    EtcdRaft:
+        Consenters:
+        - Host: orderer.youth4planet.com
+          Port: 7050
+          ClientTLSCert: ./../setup1/vm1/crypto-config/ordererOrganizations/youth4planet.com/orderers/orderer.youth4planet.com/tls/server.crt
+          ServerTLSCert: ./../setup1/vm1/crypto-config/ordererOrganizations/youth4planet.com/orderers/orderer.youth4planet.com/tls/server.crt
+
+    BatchTimeout: 2s
+
+    BatchSize:
+
+        MaxMessageCount: 10
+
+        AbsoluteMaxBytes: 99 MB
+
+        PreferredMaxBytes: 512 KB
+
+    Organizations:
+
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+        BlockValidation:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+
+Channel: &ChannelDefaults
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+
+    Capabilities:
+        <<: *ChannelCapabilities
+
+Profiles:
+
+    BasicChannel:
+        Consortium: SampleConsortium
+        <<: *ChannelDefaults
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+                - *y4p1
+                - *y4p2
+
+            Capabilities:
+                <<: *ApplicationCapabilities
+    
+    
+    OrdererGenesis:
+        <<: *ChannelDefaults
+        Capabilities:
+            <<: *ChannelCapabilities
+        Orderer:
+            <<: *OrdererDefaults
+            OrdererType: etcdraft
+            EtcdRaft:
+                Consenters:
+                - Host: orderer.youth4planet.com
+                  Port: 7050
+                  ClientTLSCert: ../../setup1/vm1/crypto-config/ordererOrganizations/youth4planet.com/orderers/orderer.youth4planet.com/tls/server.crt
+                  ServerTLSCert: ../../setup1/vm1/crypto-config/ordererOrganizations/youth4planet.com/orderers/orderer.youth4planet.com/tls/server.crt
+
+            Addresses:
+                - orderer.youth4planet.com:7050
+
+            Organizations:
+            - *OrdererOrg
+            Capabilities:
+                <<: *OrdererCapabilities
+        Consortiums:
+            SampleConsortium:
+                Organizations:
+                - *y4p1
+                - *y4p2
