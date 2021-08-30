@@ -32,4 +32,7 @@
         "balance": "90000000000000000000000"
       }
    }
+  
+  
+  besu --data-path=data --genesis-file=../cliqueGenesis.json --bootnodes=enode://c09a0c3406c76b651cf5e663ac2fe84371a5cc6f3395920318841d3ac66c20e772ddc446b27fa53fa98bc0c5d6e9c9afb738f133925268940f73f7a329efd218@35.224.142.40:30303 --network-id 123 --p2p-port=30304 --rpc-http-enabled --rpc-http-api=ETH,NET,CLIQUE --host-allowlist="*" --rpc-http-cors-origins="all" --rpc-http-port=8546
 }
